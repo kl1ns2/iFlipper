@@ -1,6 +1,6 @@
 """Desktop app (`iflipper gui`, and what iFlipper.exe opens).
 
-Starts the local backend and shows the 3D UI in a native window (WebView2 on
+Starts the local backend and shows the desk UI in a native window (WebView2 on
 Windows). The window pops to the front when a Flipper gets plugged in. If no
 web view is available, the UI opens in the default browser instead.
 """

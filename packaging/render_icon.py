@@ -1,4 +1,4 @@
-"""Render the app icon from the 3D model (dev-time; needs Playwright + Chromium).
+"""Render the app icon from the app's own Flipper drawing (dev-time; needs Playwright + Chromium).
 
     python packaging/render_icon.py
 writes src/iflipper/web/icon.png and packaging/iflipper.ico.
@@ -20,10 +20,10 @@ from iflipper.server import Backend  # noqa: E402
 JS = textwrap.dedent("""
     const { chromium } = require('playwright');
     (async () => {
-      const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+      const b = await chromium.launch();
       const pg = await b.newPage({ viewport: { width: 1024, height: 1024 }, deviceScaleFactor: 1 });
       await pg.goto(process.argv[1]);
-      await pg.waitForTimeout(6000);
+      await pg.waitForTimeout(1500);
       process.stdout.write((await pg.screenshot({ omitBackground: true })).toString('base64'));
       await b.close();
     })();
@@ -35,12 +35,12 @@ def squircle(size: int) -> Image.Image:
     bg = Image.new("RGBA", (s, s))
     big = Image.linear_gradient("L").resize((2 * s, 2 * s)).rotate(35, resample=Image.BICUBIC)
     grad = big.crop((s // 2, s // 2, s // 2 + s, s // 2 + s))  # centre crop: no empty rotated corners
-    top, bot = Image.new("RGBA", (s, s), (255, 158, 54, 255)), Image.new("RGBA", (s, s), (255, 92, 26, 255))
+    top, bot = Image.new("RGBA", (s, s), (58, 61, 70, 255)), Image.new("RGBA", (s, s), (18, 19, 23, 255))
     bg = Image.composite(bot, top, grad)
     mask = Image.new("L", (s, s), 0)
     ImageDraw.Draw(mask).rounded_rectangle((0, 0, s - 1, s - 1), radius=int(s * 0.23), fill=255)
     gloss = Image.new("L", (s, s), 0)
-    ImageDraw.Draw(gloss).ellipse((-s * 0.3, -s * 0.85, s * 1.3, s * 0.42), fill=60)
+    ImageDraw.Draw(gloss).ellipse((-s * 0.3, -s * 0.85, s * 1.3, s * 0.42), fill=26)
     bg = Image.composite(Image.new("RGBA", (s, s), (255, 255, 255, 255)), bg, gloss.filter(ImageFilter.GaussianBlur(s * 0.03)))
     bg.putalpha(mask)
     return bg.resize((size, size), Image.LANCZOS)
@@ -60,12 +60,12 @@ def main() -> None:
     shot = shot.crop(shot.getbbox())
     size = 1024
     icon = squircle(size)
-    w = int(size * 0.86)
+    w = int(size * 0.84)
     shot = shot.resize((w, int(shot.height * w / shot.width)), Image.LANCZOS)
     x, y = (size - shot.width) // 2, (size - shot.height) // 2 + int(size * 0.03)
     shadow = Image.new("RGBA", icon.size, (0, 0, 0, 0))
     a = shot.getchannel("A").point(lambda v: int(v * 0.55))
-    shadow.paste(Image.new("RGBA", shot.size, (60, 20, 0, 255)), (x, y + int(size * 0.035)), a)
+    shadow.paste(Image.new("RGBA", shot.size, (0, 0, 0, 255)), (x, y + int(size * 0.035)), a)
     shadow = shadow.filter(ImageFilter.GaussianBlur(size * 0.025))
     shadow.putalpha(ImageChops.multiply(shadow.getchannel("A"), icon.getchannel("A")))
     icon = Image.alpha_composite(icon, shadow)

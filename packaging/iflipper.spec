@@ -1,4 +1,4 @@
-# PyInstaller spec: one app folder with iFlipper.exe (3D window) and iflipper-cli.exe (console).
+# PyInstaller spec: one app folder with iFlipper.exe (window) and iflipper-cli.exe (console).
 #   pyinstaller packaging/iflipper.spec      ->  dist/iFlipper/
 # A folder build starts much faster than --onefile (nothing is unpacked to %TEMP% on each launch)
 # and trips antivirus heuristics far less often.

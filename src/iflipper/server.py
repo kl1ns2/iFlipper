@@ -1,4 +1,4 @@
-"""Local HTTP backend for the 3D desktop app.
+"""Local HTTP backend for the desktop app.
 
 Serves the web UI and a small JSON API on 127.0.0.1. Every API call must carry the
 per-launch token (header `X-Token` or `?t=`), and the Host header must be the

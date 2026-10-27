@@ -33,7 +33,7 @@ iflipper-gui = "iflipper.gui:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-iflipper = ["web/*.html", "web/*.css", "web/*.png", "web/js/*.js", "web/vendor/*", "web/vendor/addons/*"]
+iflipper = ["web/*.html", "web/*.css", "web/*.png", "web/js/*.js"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

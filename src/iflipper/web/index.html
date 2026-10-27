@@ -6,20 +6,16 @@
   <title>iFlipper</title>
   <link rel="icon" href="icon.png">
   <link rel="stylesheet" href="style.css">
-  <script type="importmap">
-    { "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }
-  </script>
 </head>
 <body>
-  <canvas id="stage"></canvas>
+  <div id="desk"></div>
   <div class="vignette"></div>
 
   <header class="topbar">
     <div class="brand"><img src="icon.png" alt=""><span>iFlipper</span></div>
     <div id="status" class="chip"><i></i><span>Запуск…</span></div>
     <div class="top-actions">
-      <button id="btn-photo" class="icon-btn" title="Фото стола">📷</button>
-      <button id="btn-view" class="icon-btn" title="Вернуть камеру (двойной клик по столу)">⟲</button>
+      <button id="btn-view" class="icon-btn" title="Вернуть вид (двойной клик по столу)">⟲</button>
       <button id="btn-sound" class="icon-btn" title="Звук">🔊</button>
     </div>
   </header>
@@ -84,7 +80,7 @@
     <ul class="file-list" id="file-list"></ul>
   </aside>
 
-  <div class="hint" id="hint">Кликайте по кнопкам Flipper или жмите <kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> <kbd>Enter</kbd> <kbd>Backspace</kbd> · удержание = долгое нажатие · тяните мышью, чтобы покрутить</div>
+  <div class="hint" id="hint">Кликайте по кнопкам Flipper или жмите <kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> <kbd>Enter</kbd> <kbd>Backspace</kbd> · удержание = долгое нажатие · колесо — зум, тянуть — двигать стол</div>
   <div id="toast" class="toast"></div>
   <input type="file" id="picker" hidden>
 

@@ -1,10 +1,10 @@
 // Customization drawer: body, buttons, screen, cases and GPIO modules.
-import { MODULES } from './addons.js';
+import { MODULES } from './device.js';
 
 export const DEFAULT_LOOK = {
   body: { color: '#f3f3f0', finish: 'gloss' },
-  accent: '#b9bcc2',
-  buttons: { dpad: '#e9e9e6', ok: '#ff8200', back: '#e9e9e6' },
+  accent: '#ff7a1a',
+  buttons: { dpad: '#ff7a1a', ok: '#ff7a1a', back: '#ff7a1a' },
   screen: { backlight: '#ff8a1c' },
   case: { type: 'none', material: 'silicone', color: '#ff7a1a' },
   module: { id: 'none' },
@@ -38,7 +38,7 @@ const CLEAR_COLORS = [
   ['#ff3b30', 'Ruby'], ['#c0c4cc', 'Frost'], ['#1f1f24', 'Dark Smoke'], ['#a3ffd6', 'Glow'],
 ];
 const BUTTON_COLORS = [
-  ['#e9e9e6', 'Белый'], ['#2b2d31', 'Графит'], ['#ff8200', 'Оранжевый'], ['#ff3b30', 'Красный'],
+  ['#ff7a1a', 'Оранжевый (оригинал)'], ['#e9e9e6', 'Белый'], ['#2b2d31', 'Графит'], ['#ff3b30', 'Красный'],
   ['#3ddc84', 'Зелёный'], ['#40c4ff', 'Голубой'], ['#7c4dff', 'Фиолетовый'], ['#ffd84d', 'Жёлтый'],
   ['#ff9ec7', 'Розовый'], ['#9fe3c9', 'Мята'], ['#111214', 'Чёрный'],
 ];
@@ -52,9 +52,9 @@ const CASE_COLORS = [
   ['#ffd84d', 'Жёлтый'], ['#8b6b4a', 'Койот'], ['#556b2f', 'Олива'], ['#c0c4cc', 'Серый'],
 ];
 const PRESETS = [
-  { name: 'Оригинал', look: { body: { color: '#f3f3f0', finish: 'gloss' }, accent: '#b9bcc2', buttons: { dpad: '#e9e9e6', ok: '#ff8200', back: '#e9e9e6' }, screen: { backlight: '#ff8a1c' } } },
+  { name: 'Оригинал', look: { body: { color: '#f3f3f0', finish: 'gloss' }, accent: '#ff7a1a', buttons: { dpad: '#ff7a1a', ok: '#ff7a1a', back: '#ff7a1a' }, screen: { backlight: '#ff8a1c' } } },
   { name: 'Stealth', look: { body: { color: '#1b1c20', finish: 'matte' }, accent: '#2b2d31', buttons: { dpad: '#2b2d31', ok: '#ff3b30', back: '#2b2d31' }, screen: { backlight: '#f2f5f8' } } },
-  { name: 'Transparent', look: { body: { color: '#eef6ff', finish: 'clear' }, accent: '#c0c4cc', buttons: { dpad: '#e9e9e6', ok: '#ff8200', back: '#e9e9e6' }, screen: { backlight: '#ff8a1c' } } },
+  { name: 'Transparent', look: { body: { color: '#eef6ff', finish: 'clear' }, accent: '#ff7a1a', buttons: { dpad: '#ff7a1a', ok: '#ff7a1a', back: '#ff7a1a' }, screen: { backlight: '#ff8a1c' } } },
   { name: 'Purple Haze', look: { body: { color: '#7c4dff', finish: 'clear' }, accent: '#5a3fc0', buttons: { dpad: '#f3f3f0', ok: '#ffd84d', back: '#f3f3f0' }, screen: { backlight: '#b77dff' } } },
   { name: 'Retro Game', look: { body: { color: '#c0c4cc', finish: 'matte' }, accent: '#6c5ce7', buttons: { dpad: '#111214', ok: '#d8263a', back: '#d8263a' }, screen: { backlight: '#7dff8a' } } },
   { name: 'Atomic', look: { body: { color: '#3ddc84', finish: 'clear' }, accent: '#2f6b3f', buttons: { dpad: '#111214', ok: '#ffd84d', back: '#111214' }, screen: { backlight: '#7dff8a' } } },
@@ -106,13 +106,14 @@ export class CustomPanel {
     const clear = l.body.finish === 'clear';
     root.appendChild(group(clear ? 'Оттенок пластика' : 'Цвет корпуса',
       swatches(clear ? CLEAR_COLORS : BODY_COLORS, l.body.color, (c) => this.change((x) => { x.body.color = c; }), clear)));
-    root.appendChild(group('Вставки и шов', swatches(BODY_COLORS, l.accent, (c) => this.change((x) => { x.accent = c; }))));
+    root.appendChild(group('Надпись и петля', swatches(BUTTON_COLORS, l.accent, (c) => this.change((x) => { x.accent = c; }))));
   }
 
   render_buttons(root) {
     const l = this.look;
     const sets = [
-      { name: 'Классика', b: { dpad: '#e9e9e6', ok: '#ff8200', back: '#e9e9e6' } },
+      { name: 'Оригинал', b: { dpad: '#ff7a1a', ok: '#ff7a1a', back: '#ff7a1a' } },
+      { name: 'Белые', b: { dpad: '#e9e9e6', ok: '#ff8200', back: '#e9e9e6' } },
       { name: 'Монохром', b: { dpad: '#2b2d31', ok: '#2b2d31', back: '#2b2d31' } },
       { name: 'Неон', b: { dpad: '#111214', ok: '#3ddc84', back: '#ff4f8b' } },
       { name: 'Ретро', b: { dpad: '#111214', ok: '#d8263a', back: '#d8263a' } },

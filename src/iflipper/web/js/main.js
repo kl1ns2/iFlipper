@@ -1,12 +1,12 @@
-import * as THREE from 'three';
-import { buildCase, buildModule, MODULES } from './addons.js';
-import { Flipper } from './flipper.js';
-import { Stage } from './scene.js';
 import { CustomPanel, DEFAULT_LOOK, mergeLook } from './custom.js';
+import { MODULES } from './device.js';
+import { Desk } from './view.js';
 
 const $ = (s) => document.querySelector(s);
-const token = new URLSearchParams(location.search).get('t');
+const params = new URLSearchParams(location.search);
+const token = params.get('t');
 const hasBackend = !!token;
+const iconMode = params.has('icon'); // studio render used to make the app icon
 
 // -- backend -------------------------------------------------------------------
 
@@ -25,28 +25,52 @@ async function api(path, { method = 'GET', body, json } = {}) {
 }
 const fileUrl = (path) => `/api/${path}${path.includes('?') ? '&' : '?'}t=${encodeURIComponent(token)}`;
 
-// -- scene ---------------------------------------------------------------------
 
-const params = new URLSearchParams(location.search);
-const iconMode = params.has('icon'); // studio render used to make the app icon
-if (iconMode) { document.body.classList.add('icon-mode'); document.documentElement.style.background = 'transparent'; }
-const stage = new Stage($('#stage'), { transparent: iconMode });
-const flipper = new Flipper();
-const rig = new THREE.Group(); // Flipper + case + module, thrown as one object
-rig.add(flipper.group);
-rig.visible = false;
-stage.scene.add(rig);
-let caseGroup = new THREE.Group(), moduleGroup = new THREE.Group();
-rig.add(caseGroup, moduleGroup);
-let lift = 0;
-let onTable = false;
+// -- desk ----------------------------------------------------------------------
+
+if (iconMode) {
+  document.body.classList.add('icon-mode');
+  document.documentElement.style.background = 'transparent';
+}
+const desk = new Desk($('#desk'), { onKey: (key, down) => (down ? keyDown(key) : keyUp()), transparent: iconMode });
+let held = null; // {key, t}
 
 function throwIn() {
-  if (onTable) return;
-  onTable = true;
   document.body.classList.add('has-flipper');
-  stage.throwIn(rig, { lift, onImpact: thud });
+  desk.throwIn(thud);
 }
+
+function setLit(on) {
+  desk.screen.lit = on;
+  desk.rig.classList.toggle('lcd-off', !on);
+  if (desk.screen.frame) desk.screen.setFrame(desk.screen.frame);
+  else if (desk.screen.message) desk.screen.setMessage(desk.screen.message);
+}
+
+function keyDown(key) {
+  if (held) return;
+  held = { key, t: performance.now() };
+  desk.pressVisual(key, true);
+  click(0.5);
+}
+
+function keyUp() {
+  if (!held) return;
+  const { key, t } = held;
+  held = null;
+  desk.pressVisual(key, false);
+  click(0.35);
+  const kind = performance.now() - t > 500 ? 'long' : 'short';
+  if (connected) api('press', { method: 'POST', json: { key, kind } }).catch((e) => toast(e.message, true));
+}
+
+const KEYMAP = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', Enter: 'ok', Backspace: 'back', Escape: 'back' };
+window.addEventListener('keydown', (e) => {
+  if (e.target.closest('input, textarea') || e.repeat) return;
+  const key = KEYMAP[e.key];
+  if (key && desk.visible) { e.preventDefault(); keyDown(key); }
+});
+window.addEventListener('keyup', (e) => { if (KEYMAP[e.key]) keyUp(); });
 
 // -- look ------------------------------------------------------------------------
 
@@ -56,24 +80,7 @@ let saveTimer = null;
 
 function applyLook(next, { save = true } = {}) {
   look = mergeLook(next);
-  flipper.apply(look);
-  for (const k of Object.values(flipper.keys)) k.extra = [];
-  flipper.hitTargets = flipper.hitTargets.filter((m) => !m.userData.fromCase);
-  rig.remove(caseGroup, moduleGroup);
-  dispose(caseGroup);
-  dispose(moduleGroup);
-  caseGroup = buildCase(look.case, flipper);
-  caseGroup.traverse((o) => { if (o.userData.key) o.userData.fromCase = true; });
-  const mod = look.module.id;
-  moduleGroup = buildModule(mod, look.modules[mod] || {});
-  rig.add(caseGroup, moduleGroup);
-  // Under a full case the real buttons are covered by the moulded pillows.
-  const full = look.case.type === 'full';
-  for (const k of Object.values(flipper.keys)) k.group.visible = !full;
-  const newLift = look.case.type === 'none' ? 0 : 1.4;
-  if (onTable && newLift !== lift) rig.position.y += newLift - lift;
-  lift = newLift;
-  stage.invalidate(true);
+  desk.setLook(look);
   if (panel) panel.render();
   if (save) {
     clearTimeout(saveTimer);
@@ -84,41 +91,12 @@ function applyLook(next, { save = true } = {}) {
   }
 }
 
-// A little dolphin-free splash for the icon's screen: "iF" in big pixels.
-function iconFrame() {
-  const c = document.createElement('canvas');
-  c.width = 128; c.height = 64;
-  const g = c.getContext('2d');
-  g.font = 'bold 44px "Segoe UI", Arial, sans-serif';
-  g.textAlign = 'center';
-  g.textBaseline = 'middle';
-  g.fillText('iF', 64, 34);
-  const a = g.getImageData(0, 0, 128, 64).data;
-  const f = new Uint8Array(1024);
-  for (let y = 0; y < 64; y++) for (let x = 0; x < 128; x++) if (a[(y * 128 + x) * 4 + 3] > 120) f[(y >> 3) * 128 + x] |= 1 << (y & 7);
-  return f;
-}
-
-function dispose(group) {
-  group.traverse((o) => {
-    if (o.geometry) o.geometry.dispose();
-    const mats = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
-    for (const m of mats) {
-      if (m.map) m.map.dispose();
-      m.dispose();
-    }
-  });
-}
-
-panel = new CustomPanel($('#custom'), {
-  get: () => look,
-  set: (l) => { applyLook(l); },
-});
+panel = new CustomPanel($('#custom'), { get: () => look, set: (l) => applyLook(l) });
 
 $('#btn-custom').onclick = () => {
   openDrawer('custom');
-  if (!onTable) {
-    flipper.setMessage(['iFlipper', 'Предпросмотр']);
+  if (!desk.visible) {
+    desk.screen.setMessage(['iFlipper', 'Предпросмотр']);
     throwIn();
   }
 };
@@ -133,6 +111,7 @@ function openDrawer(id) {
 for (const b of document.querySelectorAll('[data-close]')) {
   b.onclick = () => { b.closest('.drawer').classList.remove('open'); document.body.classList.remove('custom-open'); };
 }
+
 
 // -- device state ---------------------------------------------------------------
 
@@ -197,8 +176,7 @@ function clearDevice() {
 function setConnected(on) {
   connected = on;
   for (const b of document.querySelectorAll('.needs-dev')) b.disabled = !on;
-  flipper.setLed(on ? 0x00ff66 : 0xff3322, on ? 1.6 : 0);
-  stage.invalidate();
+  desk.setConnected(on);
 }
 
 const handlers = {
@@ -207,21 +185,20 @@ const handlers = {
     if (connected) {
       setConnected(false);
       clearDevice();
-      flipper.setBacklight(false);
-      flipper.setMessage(['Отключён']);
+      setLit(false);
+      desk.screen.setMessage(['Отключён']);
     }
     if (s.state === 'waiting') setStatus('wait', 'Ищу Flipper Zero…');
     else if (s.state === 'connecting') setStatus('wait', `Подключаюсь к ${s.target}…`);
     else if (s.state === 'error') setStatus('bad', `Ошибка подключения: ${s.message}`);
     else if (s.state === 'disconnected') { setStatus('bad', 'Flipper отключён — жду…'); toast('Flipper отключён'); }
-    stage.invalidate();
   },
   device(snap) {
     showDevice(snap);
     setConnected(true);
     setStatus('ok', `Подключено: ${snap.info.hardware_name || 'Flipper'}`);
-    flipper.setBacklight(true);
-    if (!flipper.frame) flipper.setMessage([snap.info.hardware_name || 'Flipper', 'подключён']);
+    setLit(true);
+    if (!desk.screen.frame) desk.screen.setMessage([snap.info.hardware_name || 'Flipper', 'подключён']);
     throwIn();
   },
   power: showPower,
@@ -229,8 +206,7 @@ const handlers = {
     const bin = atob(b64);
     const bytes = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    flipper.setFrame(bytes);
-    stage.invalidate();
+    desk.screen.setFrame(bytes);
   },
   progress(p) {
     const el = $('#progress');
@@ -248,73 +224,6 @@ function listen() {
   es.onerror = () => setStatus('bad', 'Нет связи с приложением…');
 }
 
-// -- input: mouse on the 3D buttons, and the keyboard ------------------------------
-
-const ray = new THREE.Raycaster();
-const ndc = new THREE.Vector2();
-let held = null; // {key, t}
-
-function hitKey(ev) {
-  if (!rig.visible) return null;
-  const r = stage.canvas.getBoundingClientRect();
-  ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
-  ray.setFromCamera(ndc, stage.camera);
-  const targets = flipper.hitTargets.filter((m) => isShown(m));
-  const hit = ray.intersectObjects(targets, false)[0];
-  return hit ? hit.object.userData.key : null;
-}
-
-function isShown(o) {
-  for (let p = o; p; p = p.parent) if (!p.visible) return false;
-  return true;
-}
-
-function keyDown(key) {
-  if (held) return;
-  held = { key, t: performance.now() };
-  flipper.pressVisual(key, true);
-  stage.animate((dt) => flipper.animateKeys(dt));
-  click(0.5);
-}
-
-function keyUp() {
-  if (!held) return;
-  const { key, t } = held;
-  held = null;
-  flipper.pressVisual(key, false);
-  stage.animate((dt) => flipper.animateKeys(dt));
-  click(0.35);
-  const kind = performance.now() - t > 500 ? 'long' : 'short';
-  if (connected) api('press', { method: 'POST', json: { key, kind } }).catch((e) => toast(e.message, true));
-}
-
-stage.canvas.addEventListener('pointerdown', (ev) => {
-  const key = hitKey(ev);
-  if (!key) return;
-  stage.controls.enabled = false;
-  stage.canvas.setPointerCapture(ev.pointerId);
-  keyDown(key);
-});
-stage.canvas.addEventListener('pointerup', () => { keyUp(); stage.controls.enabled = true; });
-stage.canvas.addEventListener('pointercancel', () => { keyUp(); stage.controls.enabled = true; });
-let hoverQueued = false;
-stage.canvas.addEventListener('pointermove', (ev) => {
-  if (hoverQueued || held) return;
-  hoverQueued = true;
-  requestAnimationFrame(() => {
-    hoverQueued = false;
-    stage.canvas.style.cursor = hitKey(ev) ? 'pointer' : 'grab';
-  });
-});
-stage.canvas.addEventListener('dblclick', () => stage.resetView());
-
-const KEYMAP = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', Enter: 'ok', Backspace: 'back', Escape: 'back' };
-window.addEventListener('keydown', (e) => {
-  if (e.target.closest('input, textarea') || e.repeat) return;
-  const key = KEYMAP[e.key];
-  if (key && rig.visible) { e.preventDefault(); keyDown(key); }
-});
-window.addEventListener('keyup', (e) => { if (KEYMAP[e.key]) keyUp(); });
 
 // -- sound: synthesised clicks and thuds (no audio files) -------------------------
 
@@ -349,6 +258,7 @@ function noise(dur, freq, gain) {
 }
 const thud = (s) => noise(0.12, 900, 0.9 * s);
 const click = (s) => noise(0.03, 4000, 0.25 * s);
+
 
 // -- actions ---------------------------------------------------------------------
 
@@ -386,7 +296,9 @@ function screenshotPng() {
   c.width = 512; c.height = 256;
   const g = c.getContext('2d');
   g.imageSmoothingEnabled = false;
-  g.drawImage(flipper.lcdCanvas, 0, 0, 512, 256);
+  g.fillStyle = look.screen.backlight;
+  g.fillRect(0, 0, 512, 256);
+  g.drawImage(desk.screen.c, 0, 0, 512, 256);
   return c.toDataURL('image/png');
 }
 
@@ -416,11 +328,8 @@ for (const b of document.querySelectorAll('[data-act]')) {
     try { await actions[b.dataset.act](); } catch (e) { toast(e.message, true); }
   };
 }
-$('#btn-view').onclick = () => stage.resetView();
-$('#btn-photo').onclick = () => {
-  stage.renderer.render(stage.scene, stage.camera);
-  download(stage.canvas.toDataURL('image/png'), `iflipper-desk-${stamp()}.png`);
-};
+$('#btn-view').onclick = () => desk.resetView();
+
 
 // -- files -----------------------------------------------------------------------
 
@@ -502,35 +411,48 @@ $('#f-up').onclick = async () => {
   if (files.length) { toast(`Загружено файлов: ${files.length}`); loadDir(cwd); }
 };
 
+
 // -- boot ------------------------------------------------------------------------------
+
+// "iF" in big pixels for the icon render.
+function iconFrame() {
+  const c = document.createElement('canvas');
+  c.width = 128; c.height = 64;
+  const g = c.getContext('2d');
+  g.font = 'bold 44px "Segoe UI", Arial, sans-serif';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.fillText('iF', 64, 34);
+  const a = g.getImageData(0, 0, 128, 64).data;
+  const f = new Uint8Array(1024);
+  for (let y = 0; y < 64; y++) for (let x = 0; x < 128; x++) if (a[(y * 128 + x) * 4 + 3] > 120) f[(y >> 3) * 128 + x] |= 1 << (y & 7);
+  return f;
+}
 
 async function boot() {
   setConnected(false);
+  if (params.has('fast')) desk.timeScale = 25; // headless tests
+  if (iconMode) {
+    applyLook(DEFAULT_LOOK, { save: false });
+    desk.screen.setFrame(iconFrame());
+    desk.rig.hidden = false;
+    desk.state.rot = -8;
+    desk.view.cy = desk.state.y;
+    desk.view.zoom = 1.6;
+    desk.layout();
+    return;
+  }
   let saved = null;
   if (hasBackend) saved = await api('look').catch(() => null);
   else try { saved = JSON.parse(localStorage.getItem('iflipper.look')); } catch { /* none */ }
   applyLook(saved && Object.keys(saved).length ? saved : DEFAULT_LOOK, { save: false });
-  panel.render();
-  flipper.setMessage(['Подключите', 'Flipper Zero']);
+  desk.screen.setMessage(['Подключите', 'Flipper Zero']);
   if (hasBackend) listen();
   else setStatus('bad', 'Демо-режим (без приложения)');
-  if (params.has('fast')) stage.timeScale = 25; // headless tests
-  if (iconMode) {
-    applyLook(DEFAULT_LOOK, { save: false });
-    flipper.setFrame(iconFrame());
-    rig.visible = true;
-    rig.rotation.set(0, 0.22, 0);
-    stage.controls.target.set(2, 6, 0);
-    stage.camera.position.set(-20, 150, 118);
-    stage.camera.fov = 40;
-    stage.camera.updateProjectionMatrix();
-    stage.invalidate(true);
-    return;
-  }
-  if (new URLSearchParams(location.search).has('demo')) {
-    flipper.setMessage(['iFlipper', 'Демо']);
+  if (params.has('demo')) {
+    desk.screen.setMessage(['iFlipper', 'Демо']);
     throwIn();
   }
-  window.__iflipper = { stage, flipper, rig, applyLook, get look() { return look; }, MODULES };
+  window.__iflipper = { desk, applyLook, get look() { return look; }, MODULES };
 }
 boot();

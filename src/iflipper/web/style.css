@@ -19,12 +19,40 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); c
 button { font: inherit; color: inherit; cursor: pointer; }
 .hidden { display: none !important; }
 body.icon-mode { background: transparent; }
-body.icon-mode > :not(#stage) { display: none !important; }
+body.icon-mode > :not(#desk) { display: none !important; }
+body.icon-mode #desk { background: transparent !important; }
 
-#stage { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+/* -- desk (top-down, everything sized in JS from millimetres) ------------- */
+#desk {
+  position: fixed; inset: 0; overflow: hidden; touch-action: none; cursor: grab;
+  background-color: #4a2f1c; background-repeat: repeat;
+}
+#desk.dragging { cursor: grabbing; }
+.mat {
+  position: absolute; background-size: 100% 100%; border-radius: 1.2%;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45), 0 1px 0 rgba(255, 255, 255, 0.08) inset;
+}
+.mat .props { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.rig { position: absolute; left: 0; top: 0; transform-origin: 50% 50%; will-change: transform; }
+.rig > div, .rig svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.rig .rig-over, .rig .fz-over { pointer-events: none; }
+.rig .lcd { position: absolute; image-rendering: pixelated; image-rendering: crisp-edges; }
+.rig .hit { fill: transparent; pointer-events: all; cursor: pointer; }
+.rig .fz-over .hits, .rig .fz-over .hit { pointer-events: all; }
+.rig.lcd-off .backlight { filter: brightness(0.22) saturate(0.6); }
+.rig.led-on .led { fill: #3ddc84; filter: drop-shadow(0 0 0.8px #3ddc84); }
+.rig .pad-group, .rig .okcap, .rig .backcap, .rig .pillow .cap, .rig .pillow-dpad {
+  transition: transform 0.07s, filter 0.07s; transform-box: fill-box; transform-origin: center;
+}
+.rig.press-up .pad-group, .rig.press-up .pillow-dpad { transform: translate(0, -0.35px); filter: brightness(0.93); }
+.rig.press-down .pad-group, .rig.press-down .pillow-dpad { transform: translate(0, 0.35px); filter: brightness(0.93); }
+.rig.press-left .pad-group, .rig.press-left .pillow-dpad { transform: translate(-0.35px, 0); filter: brightness(0.93); }
+.rig.press-right .pad-group, .rig.press-right .pillow-dpad { transform: translate(0.35px, 0); filter: brightness(0.93); }
+.rig.press-ok .okcap, .rig.press-ok .pillow[data-key="ok"] .cap { transform: scale(0.9); filter: brightness(0.88); }
+.rig.press-back .backcap, .rig.press-back .pillow[data-key="back"] .cap { transform: scale(0.88); filter: brightness(0.88); }
 .vignette {
   position: fixed; inset: 0; pointer-events: none;
-  background: radial-gradient(ellipse at 50% 45%, transparent 45%, rgba(0, 0, 0, 0.55) 100%);
+  background: radial-gradient(ellipse at 50% 48%, transparent 55%, rgba(0, 0, 0, 0.45) 100%);
 }
 
 /* -- top bar ----------------------------------------------------------- */
