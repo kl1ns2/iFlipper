@@ -477,6 +477,15 @@ def tui(c: Ctx) -> None:
 
 
 @main.command()
+@pass_ctx
+def gui(c: Ctx) -> None:
+    """Desktop window: finds the plugged-in Flipper by itself, live screen, files, backups."""
+    from .gui import main as gui_main
+
+    gui_main(c.target)
+
+
+@main.command()
 @click.argument("script", required=False, type=click.Path(exists=True, path_type=Path))
 @pass_ctx
 def shell(c: Ctx, script: Path | None) -> None:

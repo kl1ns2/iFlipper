@@ -18,12 +18,36 @@
 | Подключение по сети (TCP) | ✗ | ✓ `-p tcp://host:port` |
 | Виртуальный Flipper без железа | ✗ | ✓ `emulate` |
 | Работа по SSH / headless | ✗ | ✓ |
+| Окно с «живым» Flipper, автоподключение | ✓ | ✓ `iFlipper.exe` / `iflipper gui` |
 
 ## Установка
 
+### Windows: готовый .exe
+
+Скачайте из [Releases](https://github.com/kl1ns2/iFlipper/releases) (или из артефактов последней сборки во вкладке **Actions → build**):
+
+- **`iFlipper.exe`** — окно приложения. Запустите и подключите Flipper по USB: он сам найдётся и появится
+  на экране (живой экран, кнопки кликаются мышью или стрелками с клавиатуры, файлы, бэкапы, прошивка).
+  Отключили — iFlipper ждёт и переподключается сам.
+- **`iflipper-cli.exe`** — всё из командной строки (`iflipper-cli.exe info`, `... tui` и т.д.).
+
+Установка не нужна, Python не нужен. Windows может предупредить SmartScreen, потому что exe не подписан:
+«Подробнее» → «Выполнить в любом случае».
+
+### Из исходников (Windows / macOS / Linux)
+
 ```bash
 pip install -e .          # Python 3.10+
-iflipper --help
+iflipper gui              # окно
+iflipper --help           # CLI
+```
+
+Собрать exe самостоятельно (на Windows):
+
+```bash
+pip install -e ".[build]"
+python packaging/make_icon.py
+pyinstaller packaging/iflipper.spec      # → dist/iFlipper.exe, dist/iflipper-cli.exe
 ```
 
 Linux: если нет доступа к порту — добавьте себя в группу `dialout` (`sudo usermod -aG dialout $USER`).
@@ -90,7 +114,9 @@ iflipper emulate --tcp 7777       # iflipper -p tcp://127.0.0.1:7777 tui
 - `src/iflipper/rpc.py` — RPC поверх CLI Flipper: `start_rpc_session`, varint-кадры `PB.Main`, мультиплексирование по `command_id`, стриминг `has_next`.
 - `src/iflipper/device.py` — высокоуровневый API (`Flipper`).
 - `src/iflipper/sync.py`, `backup.py`, `update.py` — синхронизация, бэкапы, прошивки.
+- `src/iflipper/gui.py` — окно (tkinter): автопоиск, переподключение, живой экран, файлы.
 - `src/iflipper/cli.py`, `tui.py` — интерфейсы (click + rich, textual).
+- `packaging/` — сборка exe (PyInstaller), `.github/workflows/build.yml` — CI с Windows-сборкой.
 - `src/iflipper/emulator.py` — виртуальный Flipper.
 - `proto/` — схемы [flipperzero-protobuf](https://github.com/flipperdevices/flipperzero-protobuf); биндинги пересобираются `scripts/gen_proto.sh`.
 

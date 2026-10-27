@@ -1,0 +1,49 @@
+name: build
+
+on:
+  push:
+    branches: [main, "claude/**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - run: pytest -q
+
+  windows-exe:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[build]"
+      - run: python packaging/make_icon.py
+      - run: pyinstaller --noconfirm --clean packaging/iflipper.spec
+      - name: Smoke test
+        run: |
+          dist\iflipper-cli.exe --version
+          dist\iflipper-cli.exe --help
+        shell: cmd
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iFlipper-windows
+          path: |
+            dist/iFlipper.exe
+            dist/iflipper-cli.exe
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/iFlipper.exe
+            dist/iflipper-cli.exe
