@@ -479,7 +479,7 @@ def tui(c: Ctx) -> None:
 @main.command()
 @pass_ctx
 def gui(c: Ctx) -> None:
-    """Desktop window: finds the plugged-in Flipper by itself, live screen, files, backups."""
+    """3D desktop app: finds the plugged-in Flipper by itself, live screen, customization, files."""
     from .gui import main as gui_main
 
     gui_main(c.target)

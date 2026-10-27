@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>iFlipper</title>
+  <link rel="icon" href="icon.png">
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }
+  </script>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+  <div class="vignette"></div>
+
+  <header class="topbar">
+    <div class="brand"><img src="icon.png" alt=""><span>iFlipper</span></div>
+    <div id="status" class="chip"><i></i><span>Запуск…</span></div>
+    <div class="top-actions">
+      <button id="btn-photo" class="icon-btn" title="Фото стола">📷</button>
+      <button id="btn-view" class="icon-btn" title="Вернуть камеру (двойной клик по столу)">⟲</button>
+      <button id="btn-sound" class="icon-btn" title="Звук">🔊</button>
+    </div>
+  </header>
+
+  <button id="btn-custom" class="customize"><span class="spark">✦</span> Customization</button>
+
+  <section id="empty" class="empty">
+    <div class="pulse"></div>
+    <h1>Подключите Flipper Zero</h1>
+    <p>USB-кабелем — iFlipper найдёт его сам.<br>А пока можно примерить внешний вид в <b>Customization</b>.</p>
+  </section>
+
+  <aside id="device" class="panel device">
+    <div class="dev-head">
+      <div>
+        <div id="dev-name" class="dev-name">Нет устройства</div>
+        <div id="dev-fw" class="muted">—</div>
+      </div>
+      <div id="battery" class="battery"><svg viewBox="0 0 44 44"><circle class="track" cx="22" cy="22" r="18"/><circle class="val" cx="22" cy="22" r="18"/></svg><span>—</span></div>
+    </div>
+    <dl id="dev-meta" class="meta"></dl>
+    <div class="bars">
+      <div class="bar" id="bar-ext"><label>SD-карта <em></em></label><div><i></i></div></div>
+      <div class="bar" id="bar-int"><label>Внутренняя <em></em></label><div><i></i></div></div>
+    </div>
+    <div class="actions">
+      <button data-act="files" class="needs-dev">📁<span>Файлы</span></button>
+      <button data-act="shot" class="needs-dev">📸<span>Скриншот</span></button>
+      <button data-act="alert" class="needs-dev">🔔<span>Найти</span></button>
+      <button data-act="time" class="needs-dev">🕒<span>Время</span></button>
+      <button data-act="backup" class="needs-dev">💾<span>Бэкап</span></button>
+      <button data-act="restore" class="needs-dev">♻️<span>Восстановить</span></button>
+      <button data-act="update" class="needs-dev wide">⬆️<span>Прошивка из .tgz</span></button>
+    </div>
+    <div id="progress" class="progress hidden"><label></label><div><i></i></div></div>
+  </aside>
+
+  <aside id="custom" class="panel drawer">
+    <div class="drawer-head">
+      <h2>Customization</h2>
+      <button class="icon-btn close" data-close>✕</button>
+    </div>
+    <nav class="tabs" id="custom-tabs"></nav>
+    <div class="drawer-body" id="custom-body"></div>
+    <div class="drawer-foot">
+      <button id="look-reset" class="ghost">Сбросить</button>
+      <button id="look-random" class="ghost">🎲 Случайно</button>
+    </div>
+  </aside>
+
+  <aside id="files" class="panel drawer">
+    <div class="drawer-head">
+      <h2>Файлы</h2>
+      <button class="icon-btn close" data-close>✕</button>
+    </div>
+    <div class="crumbs" id="crumbs"></div>
+    <div class="file-tools">
+      <button id="f-up" class="ghost">⬆ Загрузить</button>
+      <button id="f-mkdir" class="ghost">＋ Папка</button>
+      <button id="f-refresh" class="ghost">⟳</button>
+    </div>
+    <ul class="file-list" id="file-list"></ul>
+  </aside>
+
+  <div class="hint" id="hint">Кликайте по кнопкам Flipper или жмите <kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> <kbd>Enter</kbd> <kbd>Backspace</kbd> · удержание = долгое нажатие · тяните мышью, чтобы покрутить</div>
+  <div id="toast" class="toast"></div>
+  <input type="file" id="picker" hidden>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

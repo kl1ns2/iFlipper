@@ -16,6 +16,7 @@ dependencies = [
     "rich>=13",
     "textual>=0.80",
     "pillow>=10",
+    "pywebview>=5; platform_system == 'Windows' or platform_system == 'Darwin'",
 ]
 
 [project.optional-dependencies]
@@ -30,6 +31,9 @@ iflipper-gui = "iflipper.gui:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+iflipper = ["web/*.html", "web/*.css", "web/*.png", "web/js/*.js", "web/vendor/*", "web/vendor/addons/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

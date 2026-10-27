@@ -4,6 +4,5 @@ build/
 dist/
 .venv/
 .pytest_cache/
-*.png
-*.tar.gz
-packaging/iflipper.ico
+/*.png
+/*.tar.gz

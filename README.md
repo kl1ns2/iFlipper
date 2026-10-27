@@ -1,53 +1,87 @@
+<p align="center"><img src="docs/icon.png" width="128" alt=""></p>
+
 # iFlipper
 
-Быстрый, скриптуемый компаньон для **Flipper Zero** — всё, что умеет qFlipper, плюс то, чего он не умеет.
+Компаньон для **Flipper Zero**: 3D-приложение, CLI и Python API. Всё, что умеет qFlipper, и то, чего он не умеет.
+
+![iFlipper](docs/screenshot.jpg)
+
+Подключаете Flipper — он «прилетает» на ремонтный коврик и останавливается. Экран живой (то, что сейчас на вашем
+Flipper), кнопки нажимаются мышью прямо на 3D-модели или стрелками с клавиатуры, удержание — долгое нажатие.
+Модель полностью процедурная: никаких скачанных фото или чужих 3D-ассетов.
+
+**Customization** (кнопка над Flipper):
+
+- **Корпус** — глянец, мат или прозрачный пластик (видно плату, батарею, катушку антенны), 12+ цветов и любой свой; готовые сборки.
+- **Кнопки** — крестовина, OK и «Назад» отдельно; наборы.
+- **Экран** — цвет подсветки.
+- **Чехол** — половинка (дно и бока до середины) или полный (открыт только экран, кнопки — силиконовые накладки, нажимаются как обычно); цветной силикон или прозрачный TPU с оттенком.
+- **Модули в GPIO** — Wi-Fi Devboard (ESP32-S2), CC1101, NRF24 + PA/LNA, Game Module: у каждого крышка вкл/выкл (цветная или прозрачная) и антенна вкл/выкл, где есть разъём.
+
+Внешний вид запоминается между запусками.
+
+| Полный чехол + Wi-Fi Devboard | Прозрачный корпус + CC1101 |
+|---|---|
+| ![](docs/screenshot-case.jpg) | ![](docs/screenshot-clear.jpg) |
 
 | | qFlipper | iFlipper |
 |---|:-:|:-:|
-| Инфо об устройстве, батарея, память | ✓ | ✓ (`info`, `--json`) |
-| Файловый менеджер | ✓ | ✓ CLI + TUI |
+| Инфо об устройстве, батарея, память | ✓ | ✓ |
+| Файловый менеджер | ✓ | ✓ 3D-приложение, CLI, TUI |
 | Обновление прошивки (официальные каналы) | ✓ | ✓ `update` |
-| Кастомные прошивки (Unleashed, Momentum, …) из .tgz/URL | ~ | ✓ `update --file / --url` |
+| Кастомные прошивки (Unleashed, Momentum, …) из .tgz/URL | ~ | ✓ |
 | Бэкап / восстановление | только `/int` | **вся флешка**, `.tar.gz`, инкрементально (`--since`) |
 | Восстановление только изменённого / одной папки | ✗ | ✓ `restore --only /ext/nfc` |
 | Синхронизация папок (как rsync, по MD5) | ✗ | ✓ `sync push/pull --delete --dry-run` |
-| Стрим экрана + управление кнопками | ✓ (GUI) | ✓ прямо в терминале (TUI) |
-| Скриншоты PNG | ✓ | ✓ `screenshot` |
+| Стрим экрана + управление кнопками | ✓ | ✓ в 3D и в терминале |
+| Кастомизация внешнего вида, чехлы, модули | ✗ | ✓ |
 | Макросы кнопок | ✗ | ✓ `press down down ok` |
 | Python API / REPL / скрипты | ✗ | ✓ `shell`, `import iflipper` |
 | Подключение по сети (TCP) | ✗ | ✓ `-p tcp://host:port` |
 | Виртуальный Flipper без железа | ✗ | ✓ `emulate` |
-| Работа по SSH / headless | ✗ | ✓ |
-| Окно с «живым» Flipper, автоподключение | ✓ | ✓ `iFlipper.exe` / `iflipper gui` |
 
 ## Установка
 
-### Windows: готовый .exe
+### Windows
 
-Скачайте из [Releases](https://github.com/kl1ns2/iFlipper/releases) (или из артефактов последней сборки во вкладке **Actions → build**):
+Скачайте из [Releases](https://github.com/kl1ns2/iFlipper/releases) (или из артефакта **iFlipper-windows** последней сборки во вкладке **Actions → build**):
 
-- **`iFlipper.exe`** — окно приложения. Запустите и подключите Flipper по USB: он сам найдётся и появится
-  на экране (живой экран, кнопки кликаются мышью или стрелками с клавиатуры, файлы, бэкапы, прошивка).
-  Отключили — iFlipper ждёт и переподключается сам.
-- **`iflipper-cli.exe`** — всё из командной строки (`iflipper-cli.exe info`, `... tui` и т.д.).
+- **`iFlipper-Setup.exe`** — установщик. Ставит программу только для текущего пользователя, поэтому **не просит прав
+  администратора**; создаёт ярлыки и деинсталлятор.
+- **`iFlipper-portable.zip`** — то же без установки: распаковать и запустить `iFlipper.exe`.
 
-Установка не нужна, Python не нужен. Windows может предупредить SmartScreen, потому что exe не подписан:
-«Подробнее» → «Выполнить в любом случае».
+Внутри два файла: `iFlipper.exe` (3D-приложение) и `iflipper-cli.exe` (командная строка). Нужен Windows 10/11 —
+окно рисуется встроенным в Windows движком WebView2 (Edge). Если его нет, приложение откроется в браузере.
+
+#### Про «Windows защитила ваш компьютер» / «Неизвестный издатель»
+
+Это SmartScreen. Он показывает предупреждение для любого **неподписанного** exe, который скачали из интернета, —
+независимо от того, что внутри. Убрать его можно только честно:
+
+1. **Подписать сборку сертификатом подписи кода.** CI уже умеет: добавьте в репозиторий секреты
+   `SIGN_PFX_BASE64` (base64 от `.pfx`) и `SIGN_PFX_PASSWORD` — exe и установщик подпишутся автоматически.
+   Недорогой вариант для open-source — сертификат Certum Open Source Code Signing. Подписанная программа
+   сначала тоже может показывать предупреждение, пока у сертификата не наберётся репутация.
+2. **Microsoft Store** — приложения из Store подписывает Microsoft, SmartScreen их не трогает.
+3. **winget** — установка через `winget install` не вызывает SmartScreen.
+
+Пока сборка не подписана: «Подробнее» → «Выполнить в любом случае». Обходить SmartScreen или антивирус
+другими способами мы не будем.
 
 ### Из исходников (Windows / macOS / Linux)
 
 ```bash
 pip install -e .          # Python 3.10+
-iflipper gui              # окно
+iflipper gui              # 3D-приложение
 iflipper --help           # CLI
 ```
 
-Собрать exe самостоятельно (на Windows):
+Собрать Windows-сборку самостоятельно:
 
 ```bash
 pip install -e ".[build]"
-python packaging/make_icon.py
-pyinstaller packaging/iflipper.spec      # → dist/iFlipper.exe, dist/iflipper-cli.exe
+pyinstaller packaging/iflipper.spec      # → dist/iFlipper/ (iFlipper.exe + iflipper-cli.exe)
+iscc packaging/installer.iss             # → dist/iFlipper-Setup.exe (Inno Setup 6)
 ```
 
 Linux: если нет доступа к порту — добавьте себя в группу `dialout` (`sudo usermod -aG dialout $USER`).
@@ -114,9 +148,11 @@ iflipper emulate --tcp 7777       # iflipper -p tcp://127.0.0.1:7777 tui
 - `src/iflipper/rpc.py` — RPC поверх CLI Flipper: `start_rpc_session`, varint-кадры `PB.Main`, мультиплексирование по `command_id`, стриминг `has_next`.
 - `src/iflipper/device.py` — высокоуровневый API (`Flipper`).
 - `src/iflipper/sync.py`, `backup.py`, `update.py` — синхронизация, бэкапы, прошивки.
-- `src/iflipper/gui.py` — окно (tkinter): автопоиск, переподключение, живой экран, файлы.
+- `src/iflipper/gui.py` — нативное окно (pywebview/WebView2), всплывает при подключении Flipper.
+- `src/iflipper/server.py`, `link.py` — локальный бэкенд для 3D-интерфейса (127.0.0.1 + токен) и автоподключение/переподключение.
+- `src/iflipper/web/` — 3D-интерфейс на [three.js](https://threejs.org) (MIT, лежит в `vendor/`, работает офлайн): сцена и коврик (`scene.js`, `textures.js`), модель Flipper (`flipper.js`), чехлы и модули (`addons.js`), Customization (`custom.js`).
 - `src/iflipper/cli.py`, `tui.py` — интерфейсы (click + rich, textual).
-- `packaging/` — сборка exe (PyInstaller), `.github/workflows/build.yml` — CI с Windows-сборкой.
+- `packaging/` — сборка (PyInstaller), установщик (Inno Setup), иконка (`render_icon.py` рендерит её из той же 3D-модели); `.github/workflows/build.yml` — CI: тесты, Windows-сборка, подпись (если есть сертификат).
 - `src/iflipper/emulator.py` — виртуальный Flipper.
 - `proto/` — схемы [flipperzero-protobuf](https://github.com/flipperdevices/flipperzero-protobuf); биндинги пересобираются `scripts/gen_proto.sh`.
 
