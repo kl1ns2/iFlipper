@@ -1,6 +1,6 @@
 import { CustomPanel, DEFAULT_LOOK, mergeLook } from './custom.js';
 import { MODULES } from './device.js';
-import { Desk } from './view.js';
+import { Stage } from './stage.js';
 
 const $ = (s) => document.querySelector(s);
 const params = new URLSearchParams(location.search);
@@ -26,31 +26,31 @@ async function api(path, { method = 'GET', body, json } = {}) {
 const fileUrl = (path) => `/api/${path}${path.includes('?') ? '&' : '?'}t=${encodeURIComponent(token)}`;
 
 
-// -- desk ----------------------------------------------------------------------
+// -- stage ---------------------------------------------------------------------
 
 if (iconMode) {
   document.body.classList.add('icon-mode');
   document.documentElement.style.background = 'transparent';
 }
-const desk = new Desk($('#desk'), { onKey: (key, down) => (down ? keyDown(key) : keyUp()), transparent: iconMode });
+const stage = new Stage($('#stage'), { onKey: (key, down) => (down ? keyDown(key) : keyUp()) });
 let held = null; // {key, t}
 
 function throwIn() {
   document.body.classList.add('has-flipper');
-  desk.throwIn(thud);
+  stage.appear();
 }
 
 function setLit(on) {
-  desk.screen.lit = on;
-  desk.rig.classList.toggle('lcd-off', !on);
-  if (desk.screen.frame) desk.screen.setFrame(desk.screen.frame);
-  else if (desk.screen.message) desk.screen.setMessage(desk.screen.message);
+  stage.screen.lit = on;
+  stage.rig.classList.toggle('lcd-off', !on);
+  if (stage.screen.frame) stage.screen.setFrame(stage.screen.frame);
+  else if (stage.screen.message) stage.screen.setMessage(stage.screen.message);
 }
 
 function keyDown(key) {
   if (held) return;
   held = { key, t: performance.now() };
-  desk.pressVisual(key, true);
+  stage.pressVisual(key, true);
   click(0.5);
 }
 
@@ -58,7 +58,7 @@ function keyUp() {
   if (!held) return;
   const { key, t } = held;
   held = null;
-  desk.pressVisual(key, false);
+  stage.pressVisual(key, false);
   click(0.35);
   const kind = performance.now() - t > 500 ? 'long' : 'short';
   if (connected) api('press', { method: 'POST', json: { key, kind } }).catch((e) => toast(e.message, true));
@@ -68,7 +68,7 @@ const KEYMAP = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight
 window.addEventListener('keydown', (e) => {
   if (e.target.closest('input, textarea') || e.repeat) return;
   const key = KEYMAP[e.key];
-  if (key && desk.visible) { e.preventDefault(); keyDown(key); }
+  if (key && stage.visible) { e.preventDefault(); keyDown(key); }
 });
 window.addEventListener('keyup', (e) => { if (KEYMAP[e.key]) keyUp(); });
 
@@ -80,7 +80,7 @@ let saveTimer = null;
 
 function applyLook(next, { save = true } = {}) {
   look = mergeLook(next);
-  desk.setLook(look);
+  stage.setLook(look);
   if (panel) panel.render();
   if (save) {
     clearTimeout(saveTimer);
@@ -95,8 +95,8 @@ panel = new CustomPanel($('#custom'), { get: () => look, set: (l) => applyLook(l
 
 $('#btn-custom').onclick = () => {
   openDrawer('custom');
-  if (!desk.visible) {
-    desk.screen.setMessage(['iFlipper', 'Предпросмотр']);
+  if (!stage.visible) {
+    stage.screen.setMessage(['iFlipper', 'Предпросмотр']);
     throwIn();
   }
 };
@@ -105,12 +105,10 @@ $('#btn-custom').onclick = () => {
 
 function openDrawer(id) {
   for (const d of document.querySelectorAll('.drawer')) d.classList.toggle('open', d.id === id);
-  document.body.classList.toggle('custom-open', id === 'custom');
+  document.body.classList.toggle('sheet-open', !!id);
   if (id === 'files') loadDir(cwd);
 }
-for (const b of document.querySelectorAll('[data-close]')) {
-  b.onclick = () => { b.closest('.drawer').classList.remove('open'); document.body.classList.remove('custom-open'); };
-}
+for (const b of document.querySelectorAll('[data-close]')) b.onclick = () => openDrawer(null);
 
 
 // -- device state ---------------------------------------------------------------
@@ -176,7 +174,7 @@ function clearDevice() {
 function setConnected(on) {
   connected = on;
   for (const b of document.querySelectorAll('.needs-dev')) b.disabled = !on;
-  desk.setConnected(on);
+  stage.setConnected(on);
 }
 
 const handlers = {
@@ -186,7 +184,7 @@ const handlers = {
       setConnected(false);
       clearDevice();
       setLit(false);
-      desk.screen.setMessage(['Отключён']);
+      stage.screen.setMessage(['Отключён']);
     }
     if (s.state === 'waiting') setStatus('wait', 'Ищу Flipper Zero…');
     else if (s.state === 'connecting') setStatus('wait', `Подключаюсь к ${s.target}…`);
@@ -198,7 +196,7 @@ const handlers = {
     setConnected(true);
     setStatus('ok', `Подключено: ${snap.info.hardware_name || 'Flipper'}`);
     setLit(true);
-    if (!desk.screen.frame) desk.screen.setMessage([snap.info.hardware_name || 'Flipper', 'подключён']);
+    if (!stage.screen.frame) stage.screen.setMessage([snap.info.hardware_name || 'Flipper', 'подключён']);
     throwIn();
   },
   power: showPower,
@@ -206,7 +204,7 @@ const handlers = {
     const bin = atob(b64);
     const bytes = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    desk.screen.setFrame(bytes);
+    stage.screen.setFrame(bytes);
   },
   progress(p) {
     const el = $('#progress');
@@ -225,7 +223,7 @@ function listen() {
 }
 
 
-// -- sound: synthesised clicks and thuds (no audio files) -------------------------
+// -- sound: synthesised button clicks (no audio files) -------------------------
 
 let audio = null;
 let muted = false;
@@ -256,7 +254,6 @@ function noise(dur, freq, gain) {
     src.start();
   } catch { /* audio not allowed yet */ }
 }
-const thud = (s) => noise(0.12, 900, 0.9 * s);
 const click = (s) => noise(0.03, 4000, 0.25 * s);
 
 
@@ -298,7 +295,7 @@ function screenshotPng() {
   g.imageSmoothingEnabled = false;
   g.fillStyle = look.screen.backlight;
   g.fillRect(0, 0, 512, 256);
-  g.drawImage(desk.screen.c, 0, 0, 512, 256);
+  g.drawImage(stage.screen.c, 0, 0, 512, 256);
   return c.toDataURL('image/png');
 }
 
@@ -328,7 +325,6 @@ for (const b of document.querySelectorAll('[data-act]')) {
     try { await actions[b.dataset.act](); } catch (e) { toast(e.message, true); }
   };
 }
-$('#btn-view').onclick = () => desk.resetView();
 
 
 // -- files -----------------------------------------------------------------------
@@ -431,28 +427,25 @@ function iconFrame() {
 
 async function boot() {
   setConnected(false);
-  if (params.has('fast')) desk.timeScale = 25; // headless tests
+  if (params.has('fast')) stage.timeScale = 25; // headless tests
   if (iconMode) {
     applyLook(DEFAULT_LOOK, { save: false });
-    desk.screen.setFrame(iconFrame());
-    desk.rig.hidden = false;
-    desk.state.rot = -8;
-    desk.view.cy = desk.state.y;
-    desk.view.zoom = 1.6;
-    desk.layout();
+    stage.screen.setFrame(iconFrame());
+    stage.rig.hidden = false;
+    stage.layout();
     return;
   }
   let saved = null;
   if (hasBackend) saved = await api('look').catch(() => null);
   else try { saved = JSON.parse(localStorage.getItem('iflipper.look')); } catch { /* none */ }
   applyLook(saved && Object.keys(saved).length ? saved : DEFAULT_LOOK, { save: false });
-  desk.screen.setMessage(['Подключите', 'Flipper Zero']);
+  stage.screen.setMessage(['Подключите', 'Flipper Zero']);
   if (hasBackend) listen();
   else setStatus('bad', 'Демо-режим (без приложения)');
   if (params.has('demo')) {
-    desk.screen.setMessage(['iFlipper', 'Демо']);
+    stage.screen.setMessage(['iFlipper', 'Демо']);
     throwIn();
   }
-  window.__iflipper = { desk, applyLook, get look() { return look; }, MODULES };
+  window.__iflipper = { stage, applyLook, get look() { return look; }, MODULES };
 }
 boot();

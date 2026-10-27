@@ -4,13 +4,15 @@
 export const L = 100, W = 40;
 
 // Outline, clockwise from the top-left of the top (GPIO) edge. Per-vertex corner radii.
-const OUTLINE = [[14, 0], [85, 0], [100, 15], [100, 40], [8, 40], [0, 31], [0, 23]];
-const RADII = [3, 3.5, 3.5, 6, 3, 2.5, 2.5];
-export const SCREEN = { x: 19, y: 5.4, w: 38.4, h: 23.2, r: 3.2 };
-export const LCD = { x: 21.6, y: 8.6, w: 33.2, h: 16.6 }; // the 128×64 pixel area
-const DPAD = { x: 72, y: 16, r: 11.8, ok: 3.9 };
-const BACK = { x: 88.2, y: 23.4, r: 3.5 };
-const LED = { x: 60.6, y: 26.6 };
+const OUTLINE = [[13, 0], [84.5, 0], [100, 15.2], [100, 40], [9.5, 40], [0, 26.5]];
+const RADII = [3.5, 3, 3, 6, 3.5, 4.5];
+export const SCREEN = { x: 19, y: 5.5, w: 38.6, h: 23, r: 3.4 };
+export const GLOW = { x: 20.3, y: 6.6, w: 36, h: 20.8, r: 1.4 }; // the lit orange glass
+export const LCD = { x: 21.3, y: 8.5, w: 34, h: 17 }; // the 128×64 pixel area
+const DPAD = { x: 72.1, y: 16.1, r: 11.2, ok: 3.5 };
+const BACK = { x: 88, y: 23.3, r: 3.4 };
+const LED = { x: 60.6, y: 26.9 };
+const USB = { y: 22.5 }; // charging port, upper part of the right end
 const GPIO = { x0: 22, x1: 80 };
 
 export const MODULES = {
@@ -73,16 +75,8 @@ const rrect = (x, y, w, h, r) => `M${x + r} ${y}H${x + w - r}Q${x + w} ${y} ${x 
 
 export const BODY_PATH = rounded(OUTLINE, RADII);
 
-// USB-C cable plugged into the right end, running off the mat.
-const USB_CABLE = `
-  <path d="M120 31.2C150 31 168 44 182 78S214 170 300 210" fill="none" stroke="#141518" stroke-width="3.6" stroke-linecap="round"/>
-  <path d="M120 30.4C149 30.2 166 43 180.6 77.4S212 168 300 208.6" fill="none" stroke="#3b3e45" stroke-width=".7" stroke-linecap="round" opacity=".8"/>
-  <rect x="99" y="28.7" width="12.5" height="5" rx="1.2" fill="#c9cdd2"/>
-  <rect x="99" y="28.7" width="12.5" height="1.4" rx=".7" fill="#eef0f2" opacity=".8"/>
-  <rect x="110" y="27.6" width="12" height="7.2" rx="2.2" fill="#1d1e22"/>
-  <rect x="110.6" y="28.1" width="10.8" height="2" rx="1" fill="#3b3e45" opacity=".7"/>`;
-const TOP_PATH = rounded(inset(OUTLINE, 1.9), RADII.map((r) => Math.max(r - 1.4, 1.2)));
-const POCKET = hull2({ x: DPAD.x, y: DPAD.y, r: DPAD.r + 2.6 }, { x: BACK.x, y: BACK.y, r: BACK.r + 2.1 });
+const TOP_PATH = rounded(inset(OUTLINE, 2.4), RADII.map((r) => Math.max(r - 1.8, 1.2)));
+const POCKET = hull2({ x: DPAD.x, y: DPAD.y, r: DPAD.r + 1.7 }, { x: BACK.x, y: BACK.y, r: BACK.r + 1.6 });
 const DIRS = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 };
 
 // -- colour helpers ------------------------------------------------------------
@@ -103,23 +97,22 @@ const luma = (c) => { const [r, g, b] = parse(c); return (0.299 * r + 0.587 * g 
 
 let uid = 0;
 
-export function deviceSVG(look, { cable = false } = {}) {
+export function deviceSVG(look) {
   const id = `d${++uid}`;
   const b = look.body, bt = look.buttons;
   const clear = b.finish === 'clear';
   const body = b.color;
   const ink = look.accent;
   const gloss = b.finish === 'matte' ? 0.18 : 0.42;
-  const keyPad = (key, shape, color, extra = '') =>
-    `<g class="key" data-key="${key}">${shape(color)}${extra}</g>`;
 
   const dpadDisc = (c) => `
     <circle cx="${DPAD.x}" cy="${DPAD.y}" r="${DPAD.r}" fill="url(#${id}-dpad)"/>
-    <circle cx="${DPAD.x}" cy="${DPAD.y}" r="${DPAD.r - 0.25}" fill="none" stroke="${light(c, 0.35)}" stroke-opacity=".5" stroke-width=".35"/>`;
+    <circle cx="${DPAD.x}" cy="${DPAD.y}" r="${DPAD.r - 0.3}" fill="none" stroke="${light(c, 0.3)}" stroke-opacity=".35" stroke-width=".25"/>`;
   const arrows = Object.entries(DIRS).map(([k, a]) => {
-    const r = 8.4, cx = DPAD.x + Math.cos(a) * r, cy = DPAD.y + Math.sin(a) * r;
-    const t = (rr, aa) => `${f(cx + rr * Math.cos(a + aa))} ${f(cy + rr * Math.sin(a + aa))}`;
-    return `<path d="M${t(1.1, 0)}L${t(1.1, 2.3)}L${t(1.1, -2.3)}Z" fill="${dark(bt.dpad, 0.3)}" opacity=".75"/>`;
+    // thin chevrons, like the moulded arrows on the real pad
+    const r = 8.2, cx = DPAD.x + Math.cos(a) * r, cy = DPAD.y + Math.sin(a) * r;
+    const t = (d, s) => `${f(cx + d * Math.cos(a) - s * Math.sin(a))} ${f(cy + d * Math.sin(a) + s * Math.cos(a))}`;
+    return `<path d="M${t(-0.5, -1.1)}L${t(0.6, 0)}L${t(-0.5, 1.1)}" fill="none" stroke="${dark(bt.dpad, 0.22)}" stroke-width=".3" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>`;
   }).join('');
   const sectors = Object.entries(DIRS).map(([k, a]) =>
     `<path class="hit" data-key="${k}" d="${sector(DPAD.x, DPAD.y, DPAD.ok + 0.9, DPAD.r, a - Math.PI / 4, a + Math.PI / 4)}"/>`).join('');
@@ -139,18 +132,20 @@ export function deviceSVG(look, { cable = false } = {}) {
       <stop offset="0" stop-color="#fff" stop-opacity="${gloss}"/>
       <stop offset=".6" stop-color="#fff" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="${id}-dpad" cx=".38" cy=".32" r=".8">
-      <stop offset="0" stop-color="${light(bt.dpad, 0.22)}"/>
-      <stop offset=".75" stop-color="${bt.dpad}"/>
-      <stop offset="1" stop-color="${dark(bt.dpad, 0.18)}"/>
+    <radialGradient id="${id}-dpad" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="${bt.dpad}"/>
+      <stop offset=".86" stop-color="${bt.dpad}"/>
+      <stop offset="1" stop-color="${dark(bt.dpad, 0.14)}"/>
     </radialGradient>
-    <radialGradient id="${id}-ok" cx=".38" cy=".32" r=".8">
-      <stop offset="0" stop-color="${light(bt.ok, 0.25)}"/>
+    <radialGradient id="${id}-ok" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="${light(bt.ok, 0.06)}"/>
+      <stop offset=".8" stop-color="${bt.ok}"/>
       <stop offset="1" stop-color="${dark(bt.ok, 0.12)}"/>
     </radialGradient>
-    <radialGradient id="${id}-back" cx=".38" cy=".32" r=".8">
-      <stop offset="0" stop-color="${light(bt.back, 0.25)}"/>
-      <stop offset="1" stop-color="${dark(bt.back, 0.15)}"/>
+    <radialGradient id="${id}-back" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="${bt.back}"/>
+      <stop offset=".8" stop-color="${bt.back}"/>
+      <stop offset="1" stop-color="${dark(bt.back, 0.14)}"/>
     </radialGradient>
     <linearGradient id="${id}-pocket" x1="0" y1="0" x2=".4" y2="1">
       <stop offset="0" stop-color="${dark(body, 0.16)}"/>
@@ -165,7 +160,6 @@ export function deviceSVG(look, { cable = false } = {}) {
     <clipPath id="${id}-clip"><path d="${BODY_PATH}"/></clipPath>
   </defs>
   ${moduleSVG(look)}
-  ${cable ? USB_CABLE : ''}
   ${clear ? internals(id) : ''}
   <g opacity="${clear ? 0.5 : 1}">
     <path d="${BODY_PATH}" fill="url(#${id}-side)"/>
@@ -175,25 +169,26 @@ export function deviceSVG(look, { cable = false } = {}) {
   <path d="${BODY_PATH}" fill="none" stroke="${dark(body, 0.35)}" stroke-width=".3" stroke-opacity=".6"/>
   <path d="${POCKET}" fill="url(#${id}-pocket)" opacity="${clear ? 0.55 : 1}"/>
   <path d="${POCKET}" fill="none" stroke="${dark(body, 0.25)}" stroke-width=".25" stroke-opacity=".5"/>
-  <circle cx="${DPAD.x}" cy="${DPAD.y}" r="${DPAD.r + 0.7}" fill="${dark(body, 0.3)}" opacity=".35"/>
-  <path d="${rrect(SCREEN.x, SCREEN.y, SCREEN.w, SCREEN.h, SCREEN.r)}" fill="#151516"/>
-  <path d="${rrect(SCREEN.x + 0.35, SCREEN.y + 0.35, SCREEN.w - 0.7, SCREEN.h - 0.7, SCREEN.r - 0.3)}" fill="none" stroke="#3a3b3e" stroke-width=".3"/>
-  <rect class="backlight" x="${LCD.x - 1.2}" y="${LCD.y - 1.6}" width="${LCD.w + 2.4}" height="${LCD.h + 3.2}" rx=".8" fill="${look.screen.backlight}"/>
+  <circle cx="${DPAD.x}" cy="${DPAD.y}" r="${DPAD.r + 0.6}" fill="${dark(body, 0.22)}" opacity=".5"/>
+  <path d="${rrect(SCREEN.x - 0.35, SCREEN.y - 0.35, SCREEN.w + 0.7, SCREEN.h + 0.7, SCREEN.r + 0.3)}" fill="${light(body, 0.35)}" opacity=".6"/>
+  <path d="${rrect(SCREEN.x, SCREEN.y, SCREEN.w, SCREEN.h, SCREEN.r)}" fill="#111112"/>
+  <rect class="backlight" x="${GLOW.x}" y="${GLOW.y}" width="${GLOW.w}" height="${GLOW.h}" rx="${GLOW.r}" fill="${look.screen.backlight}"/>
+  <rect x="${GLOW.x}" y="${GLOW.y}" width="${GLOW.w}" height="${GLOW.h}" rx="${GLOW.r}" fill="none" stroke="#000" stroke-opacity=".25" stroke-width=".3"/>
   <g class="pad-group" data-pad="dpad">${dpadDisc(bt.dpad)}${arrows}</g>
   <g class="key-ok">
-    <circle cx="${DPAD.x}" cy="${DPAD.y}" r="${DPAD.ok + 0.75}" fill="${dark(bt.dpad, 0.28)}" opacity=".55"/>
+    <circle cx="${DPAD.x}" cy="${DPAD.y}" r="${DPAD.ok + 0.55}" fill="${dark(bt.dpad, 0.18)}"/>
     <circle class="okcap" cx="${DPAD.x}" cy="${DPAD.y}" r="${DPAD.ok}" fill="url(#${id}-ok)"/>
   </g>
   <g class="key-back">
-    <circle cx="${BACK.x}" cy="${BACK.y}" r="${BACK.r + 0.6}" fill="${dark(body, 0.3)}" opacity=".35"/>
+    <circle cx="${BACK.x}" cy="${BACK.y}" r="${BACK.r + 0.5}" fill="${dark(body, 0.22)}" opacity=".5"/>
     <circle class="backcap" cx="${BACK.x}" cy="${BACK.y}" r="${BACK.r}" fill="url(#${id}-back)"/>
     <path d="M${BACK.x - 1.4} ${BACK.y - 0.7}h1.6a1.25 1.25 0 0 1 0 2.5h-1.2" fill="none" stroke="${dark(bt.back, 0.42)}" stroke-width=".42" stroke-linecap="round"/>
     <path d="M${BACK.x - 0.5} ${BACK.y - 1.55}l-1.05 .85l1.05 .85" fill="none" stroke="${dark(bt.back, 0.42)}" stroke-width=".42" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
   <circle class="led" cx="${LED.x}" cy="${LED.y}" r=".62" fill="#2a2b2e"/>
-  <text x="${31}" y="${37.3}" font-family="'Segoe UI', Arial, sans-serif" font-weight="800" font-style="italic" font-size="4.6" letter-spacing=".9" fill="${ink}" opacity=".95">iFlipper</text>
+  <text x="31" y="38" textLength="41" lengthAdjust="spacingAndGlyphs" font-family="'Segoe UI', Arial, sans-serif" font-weight="900" font-style="italic" font-size="5" fill="${ink}">iFLIPPER</text>
   <rect x="55" y="39.15" width="9" height=".5" rx=".25" fill="${dark(body, 0.55)}"/>
-  <rect x="99.45" y="28" width=".55" height="6.5" rx=".25" fill="${dark(body, 0.6)}"/>
+  <rect x="99.3" y="${USB.y - 3.1}" width=".7" height="6.2" rx=".3" fill="${dark(body, 0.65)}"/>
   <path d="M96.6 40.2q1.6 .9 3.2 -.2" fill="none" stroke="${ink}" stroke-width=".9" stroke-linecap="round"/>
   <g class="hits">
     ${sectors}
@@ -272,7 +267,7 @@ function caseSVG(c, look, id) {
     <g class="pillow-dpad">${pillow('dpad', DPAD.x, DPAD.y, DPAD.r + 0.6)}${arrows}</g>
     ${pillow('ok', DPAD.x, DPAD.y, DPAD.ok + 0.4)}
     ${pillow('back', BACK.x, BACK.y, BACK.r + 0.5)}
-    <text x="31" y="37.3" font-family="'Segoe UI', Arial, sans-serif" font-weight="800" font-style="italic" font-size="4.6" letter-spacing=".9" fill="${dark(col, 0.28)}" pointer-events="none">iFlipper</text>
+    <text x="31" y="38" textLength="41" lengthAdjust="spacingAndGlyphs" font-family="'Segoe UI', Arial, sans-serif" font-weight="900" font-style="italic" font-size="5" fill="${dark(col, 0.28)}" pointer-events="none">iFLIPPER</text>
   </g>
   <g class="hits">
     ${Object.entries(DIRS).map(([k, a]) => `<path class="hit" data-key="${k}" d="${sector(DPAD.x, DPAD.y, DPAD.ok + 1.1, DPAD.r + 0.6, a - Math.PI / 4, a + Math.PI / 4)}"/>`).join('')}
@@ -317,14 +312,14 @@ function moduleSVG(look) {
     parts += `<path d="M${x + 5} ${y + 3}h3v2h3v-2h3v2h3v-2" fill="none" stroke="#c9a24a" stroke-width=".4"/>`;
     parts += box(x + 28, y + 0.5, 9, 4.5, '#c9ccd1', 1.2) + box(x + 28, y + 12, 3.2, 3.2, '#111') + box(x + 34, y + 12, 3.2, 3.2, '#111');
     parts += `<circle cx="${x + 24}" cy="${y + 22}" r=".7" fill="#00ff88"/>`;
-    antenna = { x: x + 2, y: y + 2, len: 48, w: 2.4, a: -2.2 };
+    antenna = { x: x + 2, y: y + 2, len: 38, w: 2.4, a: -2.45 };
   } else if (id === 'cc1101' || id === 'nrf24') {
     parts += box(x + bw / 2 - 6, y + 7, 11, id === 'cc1101' ? 10 : 6, '#0d0e10');
     if (id === 'nrf24') parts += box(x + bw / 2 + 2, y + 6, 9, 8, '#c9ccd1', 0.5);
     parts += box(x + 4, y + bd - 6, 4, 2.5, '#b8b8b8');
     // SMA connector on the far edge
     parts += box(x + bw / 2 - 3, y - 7, 6, 8, '#d7b25a', 0.8) + box(x + bw / 2 - 4.5, y - 1.2, 9, 2.6, '#c9a24a', 0.4);
-    antenna = { x: x + bw / 2, y: y - 7, len: id === 'cc1101' ? 105 : 72, w: 7, a: -2.05 };
+    antenna = { x: x + bw / 2, y: y - 7, len: id === 'cc1101' ? 62 : 48, w: 6, a: -2.5 };
   } else if (id === 'game') {
     parts += box(x + 8, y + 10, 7, 7, '#0d0e10') + box(x + 22, y + 14, 3, 3, '#0d0e10') + box(x + 36, y + 0.5, 9, 4.5, '#c9ccd1', 1.2);
   }
@@ -366,35 +361,53 @@ export class Screen {
   constructor(canvas) {
     this.c = canvas;
     this.g = canvas.getContext('2d');
-    this.img = this.g.createImageData(128, 64);
     this.lit = true;
+    this.bits = () => 0;
   }
 
-  // 1024 bytes, u8g2 page layout (8 rows per byte, LSB on top). Off pixels stay transparent.
-  draw(bits) {
-    const d = this.img.data;
-    const ink = this.lit ? [28, 15, 2, 255] : [10, 6, 2, 255];
+  // Match the canvas to its on-screen size so every Flipper pixel is the same size
+  // (a 128×64 bitmap stretched with nearest-neighbour gives uneven, jagged pixels).
+  resize(cssW, cssH) {
+    const dpr = window.devicePixelRatio || 1;
+    const w = Math.max(128, Math.round(cssW * dpr)), h = Math.max(64, Math.round(cssH * dpr));
+    if (w === this.c.width && h === this.c.height) return;
+    this.c.width = w;
+    this.c.height = h;
+    this.paint();
+  }
+
+  // Draw runs of lit pixels as rectangles at their exact fractional positions.
+  paint() {
+    const { g, c } = this;
+    const sx = c.width / 128, sy = c.height / 64;
+    g.clearRect(0, 0, c.width, c.height);
+    g.fillStyle = this.lit ? 'rgba(30,14,2,.92)' : 'rgba(10,6,2,.9)';
+    const on = this.bits;
     for (let y = 0; y < 64; y++) {
-      for (let x = 0; x < 128; x++) {
-        const i = (y * 128 + x) * 4;
-        const on = bits(x, y);
-        d[i] = ink[0]; d[i + 1] = ink[1]; d[i + 2] = ink[2]; d[i + 3] = on ? ink[3] : 0;
+      let x = 0;
+      while (x < 128) {
+        if (!on(x, y)) { x++; continue; }
+        const x0 = x;
+        while (x < 128 && on(x, y)) x++;
+        g.fillRect(x0 * sx, y * sy, (x - x0) * sx, sy);
       }
     }
-    this.g.putImageData(this.img, 0, 0);
   }
 
+  // 1024 bytes, u8g2 page layout (8 rows per byte, LSB on top).
   setFrame(f) {
     this.frame = f;
     this.message = null;
-    this.draw((x, y) => (f[(y >> 3) * 128 + x] >> (y & 7)) & 1);
+    this.bits = (x, y) => (f[(y >> 3) * 128 + x] >> (y & 7)) & 1;
+    this.paint();
   }
 
   setMessage(lines) {
     this.message = lines;
     this.frame = null;
     const bits = textBits(lines);
-    this.draw((x, y) => bits[y * 128 + x]);
+    this.bits = (x, y) => bits[y * 128 + x];
+    this.paint();
   }
 }
 

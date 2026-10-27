@@ -2,16 +2,18 @@
 
 # iFlipper
 
-Компаньон для **Flipper Zero**: приложение с «живым» Flipper на рабочем столе, CLI и Python API. Всё, что умеет qFlipper, и то, чего он не умеет.
+Компаньон для **Flipper Zero**: приложение с «живым» Flipper, CLI и Python API. Всё, что умеет qFlipper, и то, чего он не умеет.
 
-![iFlipper](docs/screenshot.jpg)
+<p align="center">
+  <img src="docs/screenshot.jpg" width="300" alt="iFlipper">&nbsp;&nbsp;<img src="docs/screenshot-custom.jpg" width="300" alt="Customization">
+</p>
 
-Вид сверху на рабочий стол с силиконовым ремонтным ковриком. Подключаете Flipper — его «бросают» на коврик, он
-прокатывается и останавливается, к нему подключён USB-кабель. Экран живой (то, что сейчас на вашем Flipper),
-кнопки нажимаются мышью прямо на рисунке или стрелками с клавиатуры, удержание — долгое нажатие.
-Колесо мыши — зум, перетаскивание — двигать стол, двойной клик — вернуть вид.
+Приложение в стиле мобильного: чёрный фон, сверху ваш Flipper. Подключаете его по USB — он появляется на экране,
+окно само выскакивает поверх остальных. Экран живой (то, что сейчас на вашем Flipper), кнопки нажимаются прямо на
+рисунке мышью или пальцем, а также стрелками/Enter/Backspace; удержание — долгое нажатие.
 
-Рисунок Flipper сделан с нуля в SVG по пропорциям настоящего устройства — без чужих фото, логотипа и дельфина.
+Рисунок Flipper сделан с нуля в SVG по пропорциям настоящего устройства. Фото, логотип и дельфин Flipper Devices
+не используются — это их товарный знак и арт.
 
 **Customization** (кнопка над Flipper):
 
@@ -153,7 +155,7 @@ iflipper emulate --tcp 7777       # iflipper -p tcp://127.0.0.1:7777 tui
 - `src/iflipper/sync.py`, `backup.py`, `update.py` — синхронизация, бэкапы, прошивки.
 - `src/iflipper/gui.py` — нативное окно (pywebview/WebView2), всплывает при подключении Flipper.
 - `src/iflipper/server.py`, `link.py` — локальный бэкенд для интерфейса (127.0.0.1 + токен) и автоподключение/переподключение.
-- `src/iflipper/web/` — интерфейс без внешних библиотек, работает офлайн: стол и коврик (`view.js`, `textures.js`), Flipper, чехлы и модули в SVG (`device.js`), Customization (`custom.js`).
+- `src/iflipper/web/` — интерфейс без внешних библиотек, работает офлайн: сцена (`stage.js`), Flipper, чехлы и модули в SVG и экран (`device.js`), Customization (`custom.js`).
 - `src/iflipper/cli.py`, `tui.py` — интерфейсы (click + rich, textual).
 - `packaging/` — сборка (PyInstaller), установщик (Inno Setup), иконка (`render_icon.py` рендерит её из того же рисунка); `.github/workflows/build.yml` — CI: тесты, Windows-сборка, подпись (если есть сертификат).
 - `src/iflipper/emulator.py` — виртуальный Flipper.

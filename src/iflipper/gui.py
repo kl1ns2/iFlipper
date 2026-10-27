@@ -52,7 +52,7 @@ def run_window(backend: Backend) -> bool:
     except ImportError:
         return False
     webview.settings["ALLOW_DOWNLOADS"] = True
-    window = webview.create_window("iFlipper", backend.url, width=1440, height=880, min_size=(960, 600),
+    window = webview.create_window("iFlipper", backend.url, width=480, height=940, min_size=(380, 620),
                                    background_color="#0e0f12")
     backend.on_connected = lambda: threading.Thread(target=bring_to_front, args=(window,), daemon=True).start()
     try:

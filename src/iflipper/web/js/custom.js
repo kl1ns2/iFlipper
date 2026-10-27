@@ -152,7 +152,7 @@ export class CustomPanel {
     const l = this.look;
     const cards = el('div', { class: 'cards' });
     for (const [id, m] of Object.entries(MODULES)) {
-      const b = el('button', { class: 'card' + (l.module.id === id ? ' on' : '') });
+      const b = el('button', { class: 'mcard' + (l.module.id === id ? ' on' : '') });
       b.innerHTML = `<span class="ico">${MODULE_ICONS[id]}</span><span><b>${m.name}</b><small>${m.sub || 'GPIO свободен'}</small></span>`;
       b.onclick = () => this.change((x) => { x.module.id = id; });
       cards.appendChild(b);

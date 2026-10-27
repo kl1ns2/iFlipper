@@ -21,7 +21,7 @@ JS = textwrap.dedent("""
     const { chromium } = require('playwright');
     (async () => {
       const b = await chromium.launch();
-      const pg = await b.newPage({ viewport: { width: 1024, height: 1024 }, deviceScaleFactor: 1 });
+      const pg = await b.newPage({ viewport: { width: 520, height: 600 }, deviceScaleFactor: 3 });
       await pg.goto(process.argv[1]);
       await pg.waitForTimeout(1500);
       process.stdout.write((await pg.screenshot({ omitBackground: true })).toString('base64'));
